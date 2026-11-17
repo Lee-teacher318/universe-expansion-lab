@@ -1,0 +1,347 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>풍선 우주 팽창 실험실</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=IBM+Plex+Sans+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: open lab bench — sticker sheet + balloon on a cm grid (left), record table (right); stacks on narrow screens */
+:root{
+  --bg:#eef1f4; --paper:#ffffff; --ink:#1d2a44; --muted:#5d6a80; --line:#d5dbe4;
+  --grid:#dfe5ec; --grid-strong:#c7d0db;
+  --accent:#2c5fd6; --accent-ink:#ffffff; --accent-soft:#e3ebfb;
+  --balloon:#f2a7b8; --balloon-hi:#fde3ea; --balloon-shade:#d97f95;
+  --nozzle:#f2c230; --nozzle-dark:#c99a12;
+  --tape:#f7f3df; --tape-edge:#b9ad79; --tape-tick:#6d6440;
+  --st-red:#e2453c; --st-blue:#2f6fe0; --st-yellow:#f0c419; --st-green:#2fa84f;
+  --sheet:#f6f7f9;
+  --warn:#b5651d; --danger:#c0392b;
+  --f-display:"Do Hyeon","IBM Plex Sans KR",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans KR",system-ui,-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#121826; --paper:#1a2233; --ink:#e7ecf5; --muted:#9aa6bb; --line:#2c374d;
+  --grid:#1f2839; --grid-strong:#2b3650;
+  --accent:#7aa2ff; --accent-ink:#0e1424; --accent-soft:#22304f;
+  --balloon:#e78fa5; --balloon-hi:#fbd0db; --balloon-shade:#b45f76;
+  --tape:#efe8c8; --tape-edge:#a99d66; --tape-tick:#4f4829;
+  --sheet:#141b29;
+  --warn:#f0a35e; --danger:#ff8a7a; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#121826; --paper:#1a2233; --ink:#e7ecf5; --muted:#9aa6bb; --line:#2c374d;
+  --grid:#1f2839; --grid-strong:#2b3650;
+  --accent:#7aa2ff; --accent-ink:#0e1424; --accent-soft:#22304f;
+  --balloon:#e78fa5; --balloon-hi:#fbd0db; --balloon-shade:#b45f76;
+  --tape:#efe8c8; --tape-edge:#a99d66; --tape-tick:#4f4829;
+  --sheet:#141b29;
+  --warn:#f0a35e; --danger:#ff8a7a; color-scheme:dark}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.55}
+.wrap{max-width:1260px;margin:0 auto;padding-block:18px 40px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+header{margin-bottom:14px}
+.eyebrow{font-size:12px;letter-spacing:.06em;color:var(--muted);margin:0}
+h1{font-family:var(--f-display);font-weight:400;font-size:clamp(26px,4vw,36px);line-height:1.15;margin:2px 0 0;text-wrap:balance}
+.app{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:18px;align-items:start}
+@media (max-width:900px){.app{grid-template-columns:minmax(0,1fr)}}
+.bench{background:var(--paper);border:1px solid var(--line);border-radius:14px;overflow:hidden;min-width:0}
+@media (min-width:901px){.bench{position:sticky;top:calc(env(safe-area-inset-top,0px) + 12px)}}
+.tray{display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding:10px 12px;border-bottom:1px solid var(--line)}
+.sheet{display:flex;align-items:center;gap:10px;padding:6px 12px;border-radius:12px;background:var(--sheet);border:1px dashed var(--line)}
+.sheet .lbl{font-size:13px;font-weight:700;color:var(--muted)}
+.chip{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;font-weight:700;color:#fff;font-size:16px;text-shadow:0 1px 2px rgba(0,0,0,.35);box-shadow:0 2px 4px rgba(0,0,0,.25);cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+.chip.used{background:transparent!important;border:2px dashed var(--line);box-shadow:none;color:var(--muted);text-shadow:none;cursor:default}
+.ghost-chip{position:fixed;z-index:50;pointer-events:none;transform:translate(-50%,-50%) scale(1.15);opacity:.92}
+button{font:inherit;border-radius:10px;border:1px solid var(--line);background:var(--paper);color:var(--ink);padding:8px 13px;cursor:pointer;min-height:44px;touch-action:manipulation}
+button:hover:not(:disabled){border-color:var(--accent)}
+button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+#resetBtn{margin-left:auto;font-weight:700;border:2px solid var(--danger);color:var(--danger)}
+#resetBtn.armed{background:var(--danger);color:var(--paper)}
+#cv{display:block;aspect-ratio:1/1;max-width:100%;touch-action:none;-webkit-touch-callout:none;user-select:none;-webkit-user-select:none}
+.bench #cv{width:min(100%,max(320px,calc(100vh - 345px)));margin:0 auto}
+@media (max-width:900px){.bench #cv{width:min(100%,52vh)}}
+.readout{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;padding:10px 12px;border-top:1px solid var(--line);background:var(--accent-soft);min-height:58px}
+.readout:empty{display:none}
+.readout .pair{font-family:var(--f-display);font-size:22px}
+.readout .val{font-family:var(--f-mono);font-size:24px;font-variant-numeric:tabular-nums}
+.readout .hint{font-size:14px;color:var(--muted)}
+.readout .btns{display:flex;flex-wrap:wrap;gap:8px;margin-left:auto}
+.readout .btns button{min-height:52px;padding:10px 18px;font-size:16px;font-weight:700;background:var(--accent);border:2px solid var(--accent);color:var(--accent-ink);box-shadow:0 2px 6px rgba(0,0,0,.18)}
+.readout .btns button:hover{filter:brightness(1.08)}
+.readout .btns button:active{transform:translateY(1px);box-shadow:none}
+.pumpbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:10px;border-top:1px solid var(--line)}
+.hold{user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;touch-action:none;font-weight:700}
+#inBtn{background:var(--nozzle);border-color:var(--nozzle-dark);color:#2a2100}
+.cnt{font-size:13px;color:var(--muted);margin-left:auto}
+.cnt b{font-family:var(--f-mono);font-size:18px;color:var(--ink);font-weight:500}
+#msg{min-height:1.6em;margin:8px 4px 0;font-size:14px;color:var(--muted)}
+#msg.warn{color:var(--warn)}
+.panel{display:flex;flex-direction:column;gap:14px;min-width:0}
+.card{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:16px 18px;min-width:0}
+.card h2{font-family:var(--f-display);font-weight:400;font-size:22px;margin:0 0 8px}
+.tbl-wrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:14px;min-width:420px}
+th,td{border:1px solid var(--line);padding:4px;text-align:center}
+th{background:var(--grid)}
+table.rec th{font-size:14px;font-weight:700;padding:10px 8px;word-break:keep-all}
+table.rec tbody th{white-space:nowrap}
+table.rec td{font-family:var(--f-mono);font-size:22px;font-weight:500;color:var(--accent);height:52px;font-variant-numeric:tabular-nums}
+table.rec td.fresh{background:var(--accent-soft)}
+.pairtag{display:block;font-weight:400;font-size:12px;color:var(--muted);margin-top:2px}
+.pairtag:empty{display:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <p class="eyebrow">중학교 과학 2 · Ⅷ. 별과 우주 · 탐구 활동</p>
+    <h1>풍선으로 우주 팽창 알아보기</h1>
+  </header>
+
+  <div class="app">
+    <div>
+      <div class="bench">
+        <div class="tray">
+          <div class="sheet" id="sheet" aria-label="붙임딱지 판">
+            <span class="lbl">붙임딱지</span>
+          </div>
+          <button type="button" id="resetBtn">초기화</button>
+        </div>
+        <canvas id="cv" aria-label="풍선 실험대. 붙임딱지를 끌어 풍선에 붙이고, 두 붙임딱지를 차례로 누르면 거리를 잽니다."></canvas>
+        <div class="readout" id="readout" aria-live="polite"></div>
+        <div class="pumpbar">
+          <button type="button" class="hold" id="inBtn">공기 펌프 (바람 넣기)</button>
+          <button type="button" class="hold" id="outBtn">바람 빼기</button>
+          <span class="cnt">펌프질 <b id="strokes">0</b>번</span>
+        </div>
+      </div>
+      <p id="msg" role="status"></p>
+    </div>
+
+    <div class="panel">
+      <section class="card">
+        <h2>측정 기록</h2>
+        <div class="tbl-wrap">
+          <table class="rec">
+            <thead><tr><th>구분</th><th>거리가 가까운 두 붙임딱지<br>사이의 거리(cm)<span class="pairtag" id="pair0"></span></th><th>거리가 먼 두 붙임딱지<br>사이의 거리(cm)<span class="pairtag" id="pair1"></span></th></tr></thead>
+            <tbody>
+              <tr><th scope="row">풍선을 작게 분 상태</th><td id="v-0-2"></td><td id="v-1-2"></td></tr>
+              <tr><th scope="row">풍선을 크게 분 상태</th><td id="v-0-3"></td><td id="v-1-3"></td></tr>
+              <tr><th scope="row">붙임딱지 사이의 거리 변화</th><td id="v-0-c"></td><td id="v-1-c"></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+const $=s=>document.querySelector(s);
+const cv=$('#cv'),ctx=cv.getContext('2d');
+const R_START=6,R_MIN=4,R_MAX=14,STROKE_V=480,STICKER_D=1.4,MOVE_TOL=8;
+const KIT=[{id:'A',col:'--st-green',name:'초록'},{id:'B',col:'--st-red',name:'빨강'},{id:'C',col:'--st-blue',name:'파랑'},{id:'D',col:'--st-yellow',name:'노랑'}];
+let S,dispR,holdT=null,drag=null;
+function fresh(){return{R:R_START,strokes:0,stickers:[],sel:[],meas:null};}
+S=fresh();dispR=S.R;
+
+const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const dot=(a,b)=>a[0]*b[0]+a[1]*b[1]+a[2]*b[2];
+const ang=(a,b)=>Math.acos(Math.max(-1,Math.min(1,dot(a,b))));
+const st=id=>S.stickers.find(s=>s.id===id);
+function slerp(a,b,t){const th=ang(a,b);if(th<1e-6)return a;const s=Math.sin(th),k1=Math.sin((1-t)*th)/s,k2=Math.sin(t*th)/s;return[a[0]*k1+b[0]*k2,a[1]*k1+b[1]*k2,a[2]*k1+b[2]*k2];}
+function say(t,c){const m=$('#msg');m.textContent=t;m.className=c||'';}
+const measD=()=>Math.round(S.R*ang(st(S.meas.a).v,st(S.meas.b).v)*10)/10;
+
+/* geometry */
+function geom(){const w=cv.clientWidth,h=cv.clientHeight;const ppc=Math.min(w,h)/(2*R_MAX*1.13);return{w,h,ppc,cx:w/2,cy:h*0.535};}
+function proj(v,R,g){return[g.cx+v[0]*R*g.ppc,g.cy+v[1]*R*g.ppc];}
+function unproj(px,py,g){const x=(px-g.cx)/(dispR*g.ppc),y=(py-g.cy)/(dispR*g.ppc),r2=x*x+y*y;if(r2>0.9*0.9)return null;return[x,y,Math.sqrt(1-r2)];}
+function hitSticker(px,py,g){const rp=STICKER_D/2*g.ppc;let best=null,bd=Math.max(rp+6,24);
+  S.stickers.forEach(s=>{const p=proj(s.v,dispR,g),d=Math.hypot(p[0]-px,p[1]-py);if(d<bd){bd=d;best=s;}});return best;}
+const overlaps=(v,skip)=>S.stickers.some(o=>o.id!==skip&&ang(o.v,v)*dispR<STICKER_D*1.05);
+const local=e=>{const r=cv.getBoundingClientRect();return[e.clientX-r.left,e.clientY-r.top];};
+
+/* drawing */
+function resize(){const d=window.devicePixelRatio||1;cv.width=Math.round(cv.clientWidth*d);cv.height=Math.round(cv.clientHeight*d);ctx.setTransform(d,0,0,d,0,0);draw();}
+function draw(){
+  const g=geom(),R=dispR,Rp=R*g.ppc;
+  ctx.fillStyle=css('--paper');ctx.fillRect(0,0,g.w,g.h);
+  ctx.lineWidth=1;
+  for(let k=-40;k<=40;k++){const x=g.cx+k*g.ppc,y=g.cy+k*g.ppc;ctx.strokeStyle=css(k%5===0?'--grid-strong':'--grid');
+    if(x>=0&&x<=g.w){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,g.h);ctx.stroke();}
+    if(y>=0&&y<=g.h){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(g.w,y);ctx.stroke();}}
+  const nw=Math.max(10,g.ppc*0.9);
+  ctx.fillStyle=css('--nozzle');ctx.strokeStyle=css('--nozzle-dark');ctx.lineWidth=1.5;
+  ctx.beginPath();ctx.rect(g.cx-nw/2,-2,nw,g.cy-Rp-nw*0.5);ctx.fill();ctx.stroke();
+  ctx.fillStyle=css('--balloon-shade');ctx.beginPath();ctx.moveTo(g.cx-nw*0.75,g.cy-Rp-nw*0.55);ctx.lineTo(g.cx+nw*0.75,g.cy-Rp-nw*0.55);ctx.lineTo(g.cx+nw*0.4,g.cy-Rp+3);ctx.lineTo(g.cx-nw*0.4,g.cy-Rp+3);ctx.closePath();ctx.fill();
+  const gr=ctx.createRadialGradient(g.cx-Rp*0.35,g.cy-Rp*0.4,Rp*0.05,g.cx,g.cy,Rp);
+  gr.addColorStop(0,css('--balloon-hi'));gr.addColorStop(0.55,css('--balloon'));gr.addColorStop(1,css('--balloon-shade'));
+  ctx.fillStyle=gr;ctx.beginPath();ctx.arc(g.cx,g.cy,Rp,0,Math.PI*2);ctx.fill();
+  const meas=S.meas&&st(S.meas.a)&&st(S.meas.b)&&Math.abs(dispR-S.R)<1e-3;
+  if(meas)drawArc(g);
+  const rp=STICKER_D/2*g.ppc;
+  S.stickers.forEach(s=>{
+    if(drag&&drag.id===s.id&&drag.off)return;
+    const[x,y]=proj(s.v,R,g),zz=Math.max(0.12,s.v[2]);
+    ctx.save();ctx.translate(x,y);ctx.rotate(Math.atan2(s.v[1],s.v[0]));
+    ctx.fillStyle=css(s.col);ctx.beginPath();ctx.ellipse(0,0,rp*zz,rp,0,0,Math.PI*2);ctx.fill();
+    ctx.strokeStyle='rgba(0,0,0,.25)';ctx.lineWidth=1;ctx.stroke();ctx.restore();
+    if(S.sel.includes(s.id)){ctx.strokeStyle=css('--accent');ctx.lineWidth=3;ctx.beginPath();ctx.arc(x,y,rp+6,0,Math.PI*2);ctx.stroke();}
+    const fs=Math.max(12,Math.min(17,rp*1.05));
+    ctx.font=`700 ${fs}px ${css('--f-body')}`;ctx.textAlign='center';ctx.textBaseline='middle';
+    const lx=x+rp+fs*0.6,ly=y-rp-fs*0.2;ctx.lineWidth=3;ctx.strokeStyle=css('--paper');ctx.strokeText(s.id,lx,ly);ctx.fillStyle=css('--ink');ctx.fillText(s.id,lx,ly);});
+  if(drag&&drag.off&&drag.px!=null){const s=st(drag.id);ctx.globalAlpha=.7;ctx.fillStyle=css(s.col);ctx.beginPath();ctx.arc(drag.px,drag.py,rp,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1;}
+  if(meas)drawLabel(g);
+  $('#strokes').textContent=S.strokes;
+}
+function drawArc(g){
+  const a=st(S.meas.a).v,b=st(S.meas.b).v,R=dispR,th=ang(a,b),N=Math.max(12,Math.ceil(th*60)),pts=[];
+  for(let i=0;i<=N;i++)pts.push(proj(slerp(a,b,i/N),R,g));
+  ctx.lineCap='round';ctx.lineJoin='round';
+  ctx.strokeStyle=css('--tape-edge');ctx.lineWidth=11;ctx.beginPath();pts.forEach((p,i)=>i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]));ctx.stroke();
+  ctx.strokeStyle=css('--tape');ctx.lineWidth=8;ctx.stroke();
+  const L=R*th;ctx.strokeStyle=css('--tape-tick');ctx.lineWidth=1;
+  for(let c=1;c<L;c++){const t=c/L,p=proj(slerp(a,b,t),R,g),q=proj(slerp(a,b,Math.min(1,t+0.01)),R,g);
+    let dx=q[0]-p[0],dy=q[1]-p[1];const l=Math.hypot(dx,dy)||1;dx/=l;dy/=l;const k=c%5===0?4:2.5;
+    ctx.beginPath();ctx.moveTo(p[0]-dy*k,p[1]+dx*k);ctx.lineTo(p[0]+dy*k,p[1]-dx*k);ctx.stroke();}
+}
+function drawLabel(g){
+  const a=st(S.meas.a).v,b=st(S.meas.b).v,m=proj(slerp(a,b,0.5),dispR,g),txt=measD().toFixed(1)+' cm';
+  ctx.font=`500 14px ${css('--f-mono')}`;const w=ctx.measureText(txt).width+14;
+  ctx.fillStyle=css('--ink');ctx.beginPath();ctx.roundRect(m[0]-w/2,m[1]-30,w,22,6);ctx.fill();
+  ctx.fillStyle=css('--paper');ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(txt,m[0],m[1]-19);
+}
+function renderReadout(){
+  const el=$('#readout');
+  if(S.meas){el.innerHTML=`<span class="pair">${S.meas.a}–${S.meas.b}</span><span class="val">${measD().toFixed(1)} cm</span><span class="btns"><button type="button" data-rec="0">가까운 두 붙임딱지로 기록</button><button type="button" data-rec="1">먼 두 붙임딱지로 기록</button></span>`;return;}
+  if(S.sel.length===1){el.innerHTML=`<span class="hint">${S.sel[0]} 선택됨 · 거리를 잴 다른 붙임딱지를 누르세요</span>`;return;}
+  el.innerHTML=S.stickers.length>=2?'<span class="hint">두 붙임딱지를 차례로 누르면 거리를 잽니다</span>':'';
+}
+
+/* sticker sheet: drag a sticker onto the balloon */
+function renderSheet(){
+  const sh=$('#sheet');sh.querySelectorAll('.chip').forEach(c=>c.remove());
+  KIT.forEach(k=>{const used=!!st(k.id),c=document.createElement('div');
+    c.className='chip'+(used?' used':'');c.dataset.id=k.id;c.textContent=k.id;c.style.background=`var(${k.col})`;
+    c.setAttribute('aria-label',`${k.name} 붙임딱지 ${k.id}${used?' (붙임)':''}`);
+    if(!used)c.addEventListener('pointerdown',startSheetDrag);
+    sh.appendChild(c);});
+}
+function startSheetDrag(e){
+  e.preventDefault();const id=e.currentTarget.dataset.id,k=KIT.find(x=>x.id===id);
+  const gh=document.createElement('div');gh.className='chip ghost-chip';gh.textContent=id;gh.style.background=`var(${k.col})`;
+  gh.style.left=e.clientX+'px';gh.style.top=e.clientY+'px';document.body.appendChild(gh);
+  const move=ev=>{gh.style.left=ev.clientX+'px';gh.style.top=ev.clientY+'px';};
+  const up=ev=>{window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',up);window.removeEventListener('pointercancel',up);gh.remove();
+    if(ev.type==='pointercancel')return;
+    const[px,py]=local(ev),g=geom(),v=unproj(px,py,g);
+    if(!v){say('붙임딱지를 풍선 위에 놓아야 붙어요.','warn');return;}
+    if(overlaps(v)){say('다른 붙임딱지와 겹쳐요. 조금 떨어진 곳에 놓아 보세요.','warn');return;}
+    S.stickers.push({id,v,col:k.col});say(`${k.name} 붙임딱지 ${id}를 붙였어요.`);renderSheet();renderReadout();draw();};
+  window.addEventListener('pointermove',move);window.addEventListener('pointerup',up);window.addEventListener('pointercancel',up);
+}
+
+/* canvas: tap stickers to measure, drag stickers to move or peel off */
+cv.addEventListener('pointerdown',e=>{
+  const[px,py]=local(e),g=geom(),s=hitSticker(px,py,g);
+  if(!s){if(S.sel.length){S.sel=[];S.meas=null;renderReadout();draw();}return;}
+  drag={id:s.id,x0:px,y0:py,v0:s.v,moved:false,off:false,px:null,py:null};cv.setPointerCapture(e.pointerId);
+});
+cv.addEventListener('pointermove',e=>{
+  if(!drag)return;const[px,py]=local(e),g=geom();
+  if(!drag.moved&&Math.hypot(px-drag.x0,py-drag.y0)<MOVE_TOL)return;
+  if(!drag.moved){drag.moved=true;S.sel=[];S.meas=null;renderReadout();}
+  const v=unproj(px,py,g),s=st(drag.id);
+  if(v){s.v=v;drag.off=false;}else{drag.off=true;drag.px=px;drag.py=py;}
+  draw();
+});
+function endDrag(e){
+  if(!drag)return;const d=drag;drag=null;const s=st(d.id);
+  if(!d.moved){ // tap → measure
+    if(S.sel.length>=2)S.sel=[];
+    if(S.sel[0]===d.id){S.sel=[];S.meas=null;}
+    else{S.sel.push(d.id);S.meas=S.sel.length===2?{a:S.sel[0],b:S.sel[1]}:null;}
+    if(S.meas)say(`${S.meas.a}–${S.meas.b} 사이 거리를 쟀어요.`);
+  }else if(d.off){
+    S.stickers=S.stickers.filter(x=>x.id!==d.id);say(`붙임딱지 ${d.id}를 떼어 냈어요. 붙임딱지 판에서 다시 붙일 수 있어요.`);renderSheet();
+  }else if(overlaps(s.v,d.id)){s.v=d.v0;say('다른 붙임딱지와 겹쳐서 원래 자리로 돌아갔어요.','warn');}
+  else say(`붙임딱지 ${d.id}를 옮겼어요.`);
+  renderReadout();draw();
+}
+cv.addEventListener('pointerup',endDrag);
+cv.addEventListener('pointercancel',e=>{if(drag&&drag.moved){const s=st(drag.id);if(s)s.v=drag.v0;}drag=null;draw();});
+
+/* pump */
+function pump(dir){
+  if(dir>0&&S.R>=R_MAX){say('더 불면 풍선이 터질 것 같아요!','warn');return false;}
+  if(dir<0&&(S.R<=R_MIN||S.strokes<=0)){say('바람을 더 뺄 수 없어요.','warn');return false;}
+  const V=4/3*Math.PI*S.R**3+dir*STROKE_V;S.R=Math.max(R_MIN,Math.min(R_MAX,Math.cbrt(Math.max(0,V)*3/(4*Math.PI))));S.strokes+=dir;
+  if(S.meas||S.sel.length){S.meas=null;S.sel=[];renderReadout();say('풍선 크기가 바뀌었어요. 거리를 다시 재 보세요.');}else say('');
+  animTo();return true;
+}
+function animTo(){const from=dispR,to=S.R,t0=performance.now();cancelAnimationFrame(animTo.f);
+  const f=t=>{const k=Math.min(1,(t-t0)/180);dispR=k<1?from+(to-from)*(1-(1-k)**2):to;draw();if(k<1)animTo.f=requestAnimationFrame(f);};animTo.f=requestAnimationFrame(f);}
+function holdBtn(btn,dir){
+  const stop=()=>{clearInterval(holdT);holdT=null;};
+  btn.addEventListener('pointerdown',e=>{e.preventDefault();stop();if(pump(dir))holdT=setInterval(()=>{if(!pump(dir))stop();},170);});
+  ['pointerup','pointerleave','pointercancel'].forEach(t=>btn.addEventListener(t,stop));
+  btn.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();pump(dir);}});
+}
+holdBtn($('#inBtn'),1);holdBtn($('#outBtn'),-1);
+document.querySelectorAll('.hold,#cv').forEach(el=>el.addEventListener('contextmenu',e=>e.preventDefault()));
+
+/* record table */
+const store={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v);}catch(e){return d;}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}};
+let T=[{},{}];
+const NAME=['가까운 두 붙임딱지','먼 두 붙임딱지'];
+const same=(x,y)=>Math.abs(x-y)<1e-6;
+const fmt=v=>(+v).toFixed(1);
+function renderTbl(fresh){
+  [0,1].forEach(c=>{const t=T[c];
+    $('#pair'+c).textContent=t.pair?`(${t.pair})`:'';
+    $(`#v-${c}-2`).textContent=t.d2!=null?fmt(t.d2):'';
+    $(`#v-${c}-3`).textContent=t.d3!=null?fmt(t.d3):'';
+    $(`#v-${c}-c`).textContent=t.d2!=null&&t.d3!=null?fmt(Math.round((t.d3-t.d2)*10)/10):'';});
+  document.querySelectorAll('table.rec td').forEach(td=>td.classList.toggle('fresh',td.id===fresh));
+}
+function recordTo(c){
+  if(!S.meas)return;
+  const a=S.meas.a,b=S.meas.b,pair=[a,b].sort().join('–'),d=measD(),t=T[c];
+  if(t.d2==null||same(S.R,t.R2)){
+    if(t.pair&&t.pair!==pair)delete t.d3;
+    t.pair=pair;t.d2=d;t.R2=S.R;renderTbl(`v-${c}-2`);
+    const m=`${NAME[c]}(${pair}) 사이의 거리 ${fmt(d)} cm를 '풍선을 작게 분 상태' 칸에 기록했어요.`;
+    const o=T[1-c];if(o.d2!=null&&same(o.R2,t.R2)){const near=c===0?d:o.d2,far=c===0?o.d2:d;if(near>far){say(m+' 그런데 가까운 쌍이 먼 쌍보다 거리가 길어요. 확인해 보세요.','warn');return;}}
+    say(m);return;
+  }
+  if(S.R<t.R2){say('처음 기록할 때보다 풍선이 작아요. 풍선을 더 크게 불거나, 초기화하고 다시 시작하세요.','warn');return;}
+  if(pair!==t.pair){say(`풍선을 크게 분 뒤에는 처음에 잰 ${t.pair} 사이를 다시 재야 해요.`,'warn');return;}
+  t.d3=d;t.R3=S.R;renderTbl(`v-${c}-3`);
+  say(`${NAME[c]}(${pair}) 사이의 거리 ${fmt(d)} cm를 '풍선을 크게 분 상태' 칸에 기록했어요.`);
+}
+$('#readout').addEventListener('click',e=>{const c=e.target.dataset.rec;if(c!=null)recordTo(+c);});
+
+/* reset everything */
+let armed=null;const rb=$('#resetBtn');
+rb.onclick=()=>{
+  if(!armed){rb.classList.add('armed');rb.textContent='한 번 더 누르면 초기화';armed=setTimeout(()=>{armed=null;rb.classList.remove('armed');rb.textContent='초기화';},2500);return;}
+  clearTimeout(armed);armed=null;rb.classList.remove('armed');rb.textContent='초기화';
+  clearInterval(holdT);cancelAnimationFrame(animTo.f);drag=null;
+  S=fresh();dispR=S.R;T=[{},{}];renderTbl();renderSheet();renderReadout();draw();
+  say('처음 상태로 돌아갔어요. 붙임딱지를 끌어서 풍선에 붙여 보세요.');
+};
+
+renderTbl();renderSheet();renderReadout();
+new ResizeObserver(resize).observe(cv);
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change',draw);
+new MutationObserver(draw).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+say('붙임딱지를 끌어서 풍선에 붙여 보세요. 붙인 딱지를 풍선 밖으로 끌어내면 떨어집니다.');
+})();
+</script>
+
+</body>
+</html>
